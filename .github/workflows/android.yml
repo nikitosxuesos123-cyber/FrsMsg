@@ -40,32 +40,18 @@ jobs:
         shell: bash
         run: |
           curl -fsSL https://dl.google.com/android/cli/latest/linux_x86_64/install_root.sh | bash
-          command -v android
           android --version
 
-      - name: Install Android 17 SDK
+      - name: Install Android 17 platform
         shell: bash
         run: |
           set -euxo pipefail
-
-          # Find the newest Android 17 build-tools available in canary.
-          BUILD_TOOLS="$(
-            android --sdk="$ANDROID_HOME" sdk list '^build-tools/37\.' --canary --all             | grep -oE 'build-tools/37\.[0-9]+\.[0-9]+'             | sort -Vu             | tail -n 1
-          )"
-
-          if [ -z "$BUILD_TOOLS" ]; then
-            echo "Could not find Android Build-Tools 37.x.x"
-            android --sdk="$ANDROID_HOME" sdk list 'build-tools/.*' --canary --all
-            exit 1
-          fi
-
-          echo "Using $BUILD_TOOLS"
-
-          android --sdk="$ANDROID_HOME" sdk install --canary             platforms/android-37             "$BUILD_TOOLS"             platform-tools
-
+          android --sdk="$ANDROID_HOME" sdk install platforms/android-37 --canary
           test -f "$ANDROID_HOME/platforms/android-37/android.jar"
           ls -la "$ANDROID_HOME/platforms/android-37"
-          ls -la "$ANDROID_HOME/build-tools"
+
+      - name: Install stable build tools
+        run: sdkmanager 'build-tools;36.0.0' 'platform-tools'
 
       - name: Set up Gradle 9.5
         uses: gradle/actions/setup-gradle@v4
