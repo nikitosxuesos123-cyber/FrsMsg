@@ -1,0 +1,54 @@
+name: Build FRSGRAM APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'FRSGRAM-source.zip'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack FRSGRAM source
+        run: unzip -q -o FRSGRAM-source.zip
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 37
+        run: yes | sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
+
+      - name: Set up Gradle 9.5
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Build debug APK
+        run: gradle -p FRSGRAM :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FRSGRAM-debug-apk
+          path: FRSGRAM/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
